@@ -50,7 +50,13 @@ const hojaVidaSchema = new mongoose.Schema(
             ruta: { type: String, default: null },
             id_usuario: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
             fecha: { type: Date, default: null }
-        }
+        },
+        INFO_LIBERACION: [{
+            caso_id: { type: String },
+            informe_liberacion: { type: String },
+            usuario_id: { type: String },
+            fecha_liberacion: { type: Date, default: Date.now }
+        }]
 
     },
     { timestamps: true, collection: 'cl_hoja_vida' }

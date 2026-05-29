@@ -1004,7 +1004,7 @@ router.post('/caso_disponible', async (req, res) => {
 
 router.get('/sin_usuario_sic', async (req, res) => {
     try {
-        
+
         const authHeader = req.headers['authorization'] || req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({
@@ -1032,7 +1032,7 @@ router.get('/sin_usuario_sic', async (req, res) => {
             });
         }
 
-       
+
         const registros = await HojaVida.find({
             $or: [
                 { USUARIO_SIC: null },
@@ -1050,7 +1050,7 @@ router.get('/sin_usuario_sic', async (req, res) => {
             });
         }
 
-       
+
         return res.status(200).json({
             error: 0,
             response: {
@@ -1062,6 +1062,61 @@ router.get('/sin_usuario_sic', async (req, res) => {
 
     } catch (err) {
         console.error('Error en /api/hoja_vida/sin_usuario_sic:', err);
+        return res.status(500).json({
+            error: 1,
+            response: { mensaje: 'Error inesperado' }
+        });
+    }
+});
+
+router.get('/con_usuario_sic', async (req, res) => {
+    try {
+        const authHeader = req.headers['authorization'] || req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({
+                error: 1,
+                response: { mensaje: 'Token requerido' }
+            });
+        }
+
+        const token = authHeader.substring(7);
+        const secret = process.env.JWT_SECRET;
+
+        if (!secret) {
+            return res.status(500).json({
+                error: 1,
+                response: { mensaje: 'Servidor sin JWT_SECRET configurado' }
+            });
+        }
+
+        try {
+            jwt.verify(token, secret);
+        } catch (e) {
+            return res.status(401).json({
+                error: 1,
+                response: { mensaje: 'Token inválido o expirado' }
+            });
+        }
+
+        const hojasVida = await HojaVida
+            .find({
+                USUARIO_SIC: { $exists: true, $ne: null, $ne: "" }
+            })
+            .populate('IPS_ID')
+            .populate('USUARIO_ID')
+            .lean();
+
+        return res.status(200).json({
+            error: 0,
+            response: {
+                mensaje: 'Consulta exitosa - Hojas de vida con USUARIO_SIC asignado',
+                data: hojasVida,
+                total: hojasVida.length
+            }
+        });
+
+    } catch (err) {
+        console.error('Error en /api/hojas-vida/con_usuario_sic:', err);
         return res.status(500).json({
             error: 1,
             response: { mensaje: 'Error inesperado' }
